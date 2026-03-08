@@ -1,0 +1,193 @@
+<img src="Shape.png" alt="Company logo" class="logo" />
+
+<div class="timeline-page">
+  <header class="timeline-header">
+    <div class="title-block">
+      <h1>Work Orders</h1>
+    </div>
+
+    <div class="subtitle">
+      <span class="Timescale_span">Timescale</span>
+
+      <ng-select
+        [items]="['Hour', 'Day', 'Week', 'Month']"
+        [clearable]="false"
+        [ngModel]="timeScale()"
+        (ngModelChange)="onTimeScaleChange($event)"
+        class="timescale-select"
+      >
+        <ng-template ng-label-tmp let-item="item">
+          {{ item | titlecase }}
+        </ng-template>
+      </ng-select>
+    </div>
+  </header>
+
+  <div class="timeline-container">
+    <div class="workcenters-column">
+      <div class="header-cell">Work Center</div>
+
+      <div class="workcenter-row" *ngFor="let center of workCenters()">
+        <div class="workcenter-name">
+          {{ center.data.name }}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-wrapper">
+      <div class="grid-header month-mode" [style.--month-width.px]="160">
+        <div class="grid-header-cell" *ngFor="let col of columns()">
+          {{ getHeaderLabel(col) }}
+        </div>
+      </div>
+
+      <div
+        class="grid-body"
+        [style.--day-width.px]="timeScale() === 'Month' ? 160 : pixelsPerDay()"
+      >
+        <div class="grid-row" *ngFor="let center of workCenters()">
+          <div class="grid-row-background">
+            <div
+              class="grid-cell"
+              *ngFor="let col of columns()"
+              (click)="onRowCellClick(center, col.date)"
+            ></div>
+          </div>
+
+          <div class="bars-layer">
+            <div
+              class="work-order-bar"
+              *ngFor="let order of getRowOrders(center.docId)"
+              [ngStyle]="getBarStyle(order)"
+              [ngClass]="getStatusClass(order.data.status)"
+            >
+              <div class="bar-main">
+                <span class="bar-title">{{ order.data.name }}</span>
+
+                <span class="status-pill">
+                  {{ statusOptions.find(s => s.value === order.data.status)?.label }}
+                </span>
+              </div>
+
+              <div ngbDropdown class="bar-menu">
+                <button
+                  ngbDropdownToggle
+                  type="button"
+                  class="dots-button"
+                  aria-label="Open work order actions"
+                >
+                  ⋯
+                </button>
+
+                <div ngbDropdownMenu class="bar-dropdown-menu">
+                  <button
+                    ngbDropdownItem
+                    type="button"
+                    class="bar-dropdown-item"
+                    (click)="onBarEdit(order)"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    ngbDropdownItem
+                    type="button"
+                    class="bar-dropdown-item"
+                    (click)="onBarDelete(order)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-backdrop" *ngIf="panelOpen()" (click)="closePanel()">
+    <aside class="details-panel" (click)="$event.stopPropagation()">
+      <form [formGroup]="form" (ngSubmit)="submitForm()" class="panel-form">
+        <header class="panel-header">
+          <div class="title_text">
+            <h2>Work Order Details</h2>
+            <p>Specify the dates, name and status for this order</p>
+          </div>
+
+          <div class="panel-actions">
+            <button type="button" class="btn-secondary" (click)="closePanel()">Cancel</button>
+            <button type="submit" class="btn-primary">
+              {{ panelMode() === 'create' ? 'Create' : 'Save' }}
+            </button>
+          </div>
+        </header>
+
+        <div class="form-field">
+          <label for="name">Work Order Name</label>
+          <input id="name" type="text" formControlName="name" />
+        </div>
+
+        <div class="form-field">
+          <label for="status">Status</label>
+          <ng-select
+            id="status"
+            formControlName="status"
+            [items]="statusOptions"
+            bindLabel="label"
+            bindValue="value"
+            [clearable]="false"
+            class="input_staus"
+          ></ng-select>
+        </div>
+
+        <div class="form-field">
+          <label for="workCenterId">Work Center</label>
+          <ng-select
+            id="workCenterId"
+            formControlName="workCenterId"
+            [items]="workCenters()"
+            bindLabel="data.name"
+            bindValue="docId"
+            [clearable]="false"
+          ></ng-select>
+        </div>
+
+        <div class="form-field date-row">
+          <div class="date-field">
+            <label for="startDate">Start Date</label>
+            <div class="datepicker-wrapper">
+              <input
+                id="startDate"
+                class="date-input"
+                ngbDatepicker
+                #d1="ngbDatepicker"
+                formControlName="startDate"
+                (click)="d1.toggle()"
+                readonly
+              />
+            </div>
+          </div>
+
+          <div class="date-field">
+            <label for="endDate">End Date</label>
+            <div class="datepicker-wrapper">
+              <input
+                id="endDate"
+                class="date-input"
+                ngbDatepicker
+                #d2="ngbDatepicker"
+                formControlName="endDate"
+                (click)="d2.toggle()"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="error-message" *ngIf="panelError()">
+          {{ panelError() }}
+        </div>
+      </form>
+    </aside>
+  </div>
+</div>
